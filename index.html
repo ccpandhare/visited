@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Chinmay's Map</title>
+    <script>
+      var places = {};
+      var visitedPlaces;
+      function parseMap() {
+        let svg = map.children[0];
+        for(let place of map.children[0].children) {
+          places[place.id] = place;
+          place.onmouseenter = () => showTooltip(`${place.getAttribute("title")} (${place.id})`);
+        }
+        visited.innerHTML = "";
+        for(let place in visitedPlaces) {
+          places[place].style.fill = "#0080ff";
+          const textNode = document.createTextNode(places[place].getAttribute("title"));
+          const spanNode = document.createElement("span");
+          spanNode.appendChild(textNode);
+          visited.appendChild(spanNode);
+        }
+      }
+      function fetchMap(loc) {
+        fetch(loc + ".svg", {cache: "force-cache"}).then(async response => {
+          const svg = await response.text();
+          map.innerHTML = svg;
+          
+          fetch("visited_" + loc + ".json").then(async data => {
+            visitedPlaces = await data.json();
+            parseMap();
+          });
+        });
+      }
+      window.onload = () => {
+        left.onmousemove = function (e) {
+          tooltip.style.left = 5 + e.clientX;
+          tooltip.style.top = 5 + e.clientY;
+        }
+        left.onmouseout = hideTooltip;
+        fetchMap("world");
+      } 
+      
+      function showTooltip(text) {
+        tooltip.className = "visible";
+        tooltip.innerHTML = text; 
+      }
+      function hideTooltip() {
+        tooltip.className = "";
+      }
+    </script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: row;
+        font-family: Helvetica, sans-serif;
+      }
+      #left, #map {
+        flex: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #eee;
+      }
+      #right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0;
+        align-items: center;
+      }
+      #visited {
+        display: flex;
+        flex-direction: column;
+      }
+      path {
+        fill: #fff;
+        stroke: #000;
+      }
+      path:hover {
+        fill: yellow;
+      }
+      #right h2 {
+        color: #0080ff;
+      }
+      a.mapSwitch {
+        display: inline-block;
+        padding: 10px 20px 9px 20px;
+        color: #fff;
+        background: #0080ff;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      #tooltip {
+        position: absolute;
+        display: none;
+        padding: 5px 10px;
+        background: #fff;
+        border: 1px solid gray;
+      }
+
+      #tooltip.visible {
+        display: inline;
+      }
+
+      @media (orientation: portrait) {
+        body {
+          flex-direction: column;
+          font-size: 30px;
+        }
+        #left, #map {
+          height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section id="left">
+      <div id="tooltip"></div>
+      <div id="map"></div>
+    </section>
+    <section id="right">
+      <span>
+        <a class="mapSwitch" onclick="fetchMap('world')">World</a>
+        <a class="mapSwitch" onclick="fetchMap('india')">India</a>
+      </span>
+      <h2>Visited:</h2>
+      <div id="visited"></div>
+    </div>
+  </body>
+</html>
